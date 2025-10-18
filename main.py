@@ -110,7 +110,7 @@ def convert_wav_to_midi():
 
     v2m.convert_wav_to_midi(wav_path, midi_path,bpm,nb_mesures)
 
-    return jsonify({"message": f"MIDI enregistre: {midi_path}"})
+    return jsonify({"message": midi_path})
 
 
         
