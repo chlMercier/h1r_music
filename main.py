@@ -14,20 +14,30 @@ app = Flask(__name__)
 
 MIDI_DIR = r"midi"
 
-def get_next_midi_path(midi_dir=MIDI_DIR, prefix="output", ext=".mid"):
-    """Retourne le chemin du prochain fichier MIDI avec index incrémenté"""
+def get_next_midi_path(instrument, midi_dir=MIDI_DIR, ext=".mid"):
+    """
+    Retourne le chemin du prochain fichier MIDI pour un instrument donné.
+    Exemple : piano_1.mid, piano_2.mid, guitare_1.mid, ...
+    """
     os.makedirs(midi_dir, exist_ok=True)
-    existing = [f for f in os.listdir(midi_dir) if f.startswith(prefix) and f.endswith(ext)]
+
+    # Lister les fichiers commençant par le nom de l’instrument
+    existing = [f for f in os.listdir(midi_dir)
+                if f.startswith(f"{instrument}_") and f.endswith(ext)]
+
     indices = []
     for f in existing:
         try:
-            # extraire l'entier après le prefix
-            idx = int(f[len(prefix):-len(ext)])
+            # extraire l'indice après le nom de l’instrument
+            idx_str = f[len(instrument) + 1 : -len(ext)]
+            idx = int(idx_str)
             indices.append(idx)
         except ValueError:
             pass
+
     next_idx = max(indices, default=0) + 1
-    return os.path.join(midi_dir, f"{prefix}{next_idx}{ext}")
+    filename = f"{instrument}_{next_idx}{ext}"
+    return os.path.join(midi_dir, filename)
 
 
 def list_files_in_folder(folder_path):
@@ -62,7 +72,7 @@ def convert_wav_to_midi():
     f.save(wav_path)
 
     # Générer le chemin MIDI automatiquement
-    midi_path = get_next_midi_path()
+    midi_path = get_next_midi_path(instrument)
 
     # Convertir WAV → MIDI
 
