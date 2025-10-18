@@ -29,7 +29,11 @@ PS1> Invoke-Expression (poetry env activate)
 ```
 (h1rmusic) $  poetry run python blabla.py
 ```
+### activate virtual env with pip on windows:
+```
+venv\Scripts\Activate.ps1
 
+```
 ## Recording sound
 
 (All of these can be replaced with poetry run command if the virtual env is activated)

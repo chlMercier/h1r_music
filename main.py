@@ -37,7 +37,7 @@ def convert_wav_to_midi():
         return jsonify({"error": "empty filename"}), 400
 
     # Enregistrer le WAV dans un dossier temporaire
-    wav_path = os.path.join(os.getcwd(), f.filename)  # ou un dossier temp
+    wav_path = os.path.join(r"recordings", f.filename)  # ou un dossier temp
     f.save(wav_path)
 
     # Générer le chemin MIDI automatiquement
@@ -50,7 +50,6 @@ def convert_wav_to_midi():
 
 
         
-
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=9004, debug=True)
