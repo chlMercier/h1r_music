@@ -42,9 +42,7 @@ def apply_min_length_filter(f1, min_length=MIN_LENGTH):
             replacement = last_note
             filtered.extend([replacement]*count)
 
-        i += count
-    
-
+        i += count 
 
     return filtered
 
