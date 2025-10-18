@@ -40,12 +40,6 @@ def get_next_midi_path(instrument, midi_dir=MIDI_DIR, ext=".mid"):
     return os.path.join(midi_dir, filename)
 
 
-def list_files_in_folder(folder_path):
-    """Retourne la liste des fichiers dans un dossier donné."""
-    if not os.path.exists(folder_path):
-        raise FileNotFoundError(f"❌ Le dossier '{folder_path}' n'existe pas.")
-    return [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
-
 
 ###################
 
@@ -82,7 +76,9 @@ def convert_wav_to_midi():
     
 
     #créer le wav du nouvel instru et stock son path 
-    new_track = audio_tools.midi_to_wav.midi_to_wav(midi_path,"./GeneralUser-GS.sf2",instrument,"./AUDIO/{instrument}")
+    instru_n = os.path.basename(midi_path)         
+    instru_n_without_ext = os.path.splitext(instru_n)[0] 
+    new_track = audio_tools.midi_to_wav.midi_to_wav(midi_path,"./GeneralUser-GS.sf2",instrument,"./AUDIO/{instru_n_without_ext}.wav")
 
 
     #crée le mix band avec le nouvel instru et stock son path 
