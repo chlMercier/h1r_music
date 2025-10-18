@@ -64,6 +64,7 @@ def convert_wav_to_midi():
     bpm = request.form.get("bpm", type=float, default=120)
     instrument = request.form.get("instrument", default="piano")
     nb_mesures = request.form.get("nb_mesures", type=int, default=4)
+    pistes= request.form.get("pistes")
     if f.filename == "":
         return jsonify({"error": "empty filename"}), 400
 
