@@ -1,5 +1,6 @@
 # server_convert.py
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import os
 import tempfile
 import numpy as np
@@ -8,7 +9,7 @@ from mido import MidiFile, MidiTrack, Message
 import v2m
 
 app = Flask(__name__)
-
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 MIDI_DIR = r"midi"
 
