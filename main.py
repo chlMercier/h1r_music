@@ -30,7 +30,7 @@ def get_next_midi_path(midi_dir=MIDI_DIR, prefix="output", ext=".mid"):
 @app.route("/convert", methods=["POST"])
 def convert_wav_to_midi():
     # Vérifie si le fichier est présent
-    if "file" not in request.files:
+    if "audio" not in request.files:
         return jsonify({"error": "no file part (form field 'file' missing)"}), 400
 
     # Récupère le fichier
