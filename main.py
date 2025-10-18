@@ -82,7 +82,7 @@ def convert_wav_to_midi():
     
 
     #créer le wav du nouvel instru et stock son path 
-    new_track = audio_tools.midi_to_wav.midi_to_wav(midi_path,"./GeneralUser-GS.sf2",instrument,"./AUDIO")
+    new_track = audio_tools.midi_to_wav.midi_to_wav(midi_path,"./GeneralUser-GS.sf2",instrument,"./AUDIO/{instrument}")
 
 
     #crée le mix band avec le nouvel instru et stock son path 
