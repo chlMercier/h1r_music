@@ -13,7 +13,7 @@ Projet Music pour Hack1robo
 Bash:
 
 ```
-$ eval $(poetry env activate)
+$eval $(poetry env activate)
 (h1rmusic) $  # Virtualenv entered
 ```
 

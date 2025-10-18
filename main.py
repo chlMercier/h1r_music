@@ -1,5 +1,6 @@
 # server_convert.py
 from flask import Flask, request, send_file ,  jsonify
+from flask_cors import CORS
 import os
 import tempfile
 import numpy as np
@@ -10,7 +11,7 @@ import audio_tools.midi_to_wav , audio_tools.mixer
 
 
 app = Flask(__name__)
-
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 MIDI_DIR = r"midi"
 
@@ -39,12 +40,6 @@ def get_next_midi_path(instrument, midi_dir=MIDI_DIR, ext=".mid"):
     filename = f"{instrument}_{next_idx}{ext}"
     return os.path.join(midi_dir, filename)
 
-
-def list_files_in_folder(folder_path):
-    """Retourne la liste des fichiers dans un dossier donné."""
-    if not os.path.exists(folder_path):
-        raise FileNotFoundError(f"❌ Le dossier '{folder_path}' n'existe pas.")
-    return [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
 
 
 ###################
@@ -77,40 +72,26 @@ def convert_wav_to_midi():
 
     # Convertir WAV → MIDI
 
-    v2m.convert_wav_to_midi(wav_path, midi_path)
-    
-    instru_name = "Trumpet"
-
-    #créer le wav du nouvel instru et stock son path 
-    new_instru_path = audio_tools.midi_to_wav.midi_to_wav(midi_path,"./GeneralUser-GS.sf2",instru_name,"./AUDIO")
-
-
-    file_path = "./AUDIO/band.wav"
-
-    if os.path.exists(file_path):
-        os.remove(file_path)
-        print(f"🗑️ Fichier supprimé avant regénération: {file_path}")
-
-
-    #trouve la liste des noms de fichiers dans le dossier audio
-    list_files_4_band = list_files_in_folder("./AUDIO")
-
-    #crée le mix band avec le nouvel instru et stock son path 
-    new_band_path = audio_tools.mixer.mix_wav_files("./AUDIO/band.wav",list_files_4_band,)
-
-
-    #zip des deux fichiers wav
-
-    #envoie les wav zippés
-    send_file()
-
-
-    #supprime le fichier band
-  
-
     v2m.convert_wav_to_midi(wav_path, midi_path,bpm,nb_mesures)
 
-    return jsonify({"message": midi_path})
+
+    
+
+    #créer le wav du nouvel instru et stock son path 
+    instru_n = os.path.basename(midi_path)         
+    instru_n_without_ext = os.path.splitext(instru_n)[0] 
+    new_track = audio_tools.midi_to_wav.midi_to_wav(midi_path,"./GeneralUser-GS.sf2",instrument,"./AUDIO/{instru_n_without_ext}.wav")
+
+
+    #crée le mix band avec le nouvel instru et stock son path 
+    master_path = audio_tools.mixer.mix_wav_files("./AUDIO/master.wav",pistes)
+
+
+    
+    return jsonify({"master": master_path,
+                    "newtrack": new_track} )
+
+
 
 
         
