@@ -1,5 +1,5 @@
 # server_convert.py
-from flask import Flask, request, jsonify
+from flask import Flask, request, send_file ,  jsonify
 from flask_cors import CORS
 import os
 import tempfile
@@ -7,26 +7,43 @@ import numpy as np
 import librosa
 from mido import MidiFile, MidiTrack, Message
 import v2m
+import audio_tools.midi_to_wav , audio_tools.mixer
+
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 MIDI_DIR = r"midi"
 
-def get_next_midi_path(midi_dir=MIDI_DIR, prefix="output", ext=".mid"):
-    """Retourne le chemin du prochain fichier MIDI avec index incrémenté"""
+def get_next_midi_path(instrument, midi_dir=MIDI_DIR, ext=".mid"):
+    """
+    Retourne le chemin du prochain fichier MIDI pour un instrument donné.
+    Exemple : piano_1.mid, piano_2.mid, guitare_1.mid, ...
+    """
     os.makedirs(midi_dir, exist_ok=True)
-    existing = [f for f in os.listdir(midi_dir) if f.startswith(prefix) and f.endswith(ext)]
+
+    # Lister les fichiers commençant par le nom de l’instrument
+    existing = [f for f in os.listdir(midi_dir)
+                if f.startswith(f"{instrument}_") and f.endswith(ext)]
+
     indices = []
     for f in existing:
         try:
-            # extraire l'entier après le prefix
-            idx = int(f[len(prefix):-len(ext)])
+            # extraire l'indice après le nom de l’instrument
+            idx_str = f[len(instrument) + 1 : -len(ext)]
+            idx = int(idx_str)
             indices.append(idx)
         except ValueError:
             pass
+
     next_idx = max(indices, default=0) + 1
-    return os.path.join(midi_dir, f"{prefix}{next_idx}{ext}")
+    filename = f"{instrument}_{next_idx}{ext}"
+    return os.path.join(midi_dir, filename)
+
+
+
+###################
+
 
 @app.route("/convert", methods=["POST"])
 def convert_wav_to_midi():
@@ -42,6 +59,7 @@ def convert_wav_to_midi():
     bpm = request.form.get("bpm", type=float, default=120)
     instrument = request.form.get("instrument", default="piano")
     nb_mesures = request.form.get("nb_mesures", type=int, default=4)
+    pistes= request.form.get("pistes")
     if f.filename == "":
         return jsonify({"error": "empty filename"}), 400
 
@@ -50,12 +68,30 @@ def convert_wav_to_midi():
     f.save(wav_path)
 
     # Générer le chemin MIDI automatiquement
-    midi_path = get_next_midi_path()
+    midi_path = get_next_midi_path(instrument)
 
     # Convertir WAV → MIDI
+
     v2m.convert_wav_to_midi(wav_path, midi_path,bpm,nb_mesures)
 
-    return jsonify({"message": f"MIDI enregistre: {midi_path}"})
+    
+
+    #créer le wav du nouvel instru et stock son path 
+    instru_n = os.path.basename(midi_path)         
+    instru_n_without_ext = os.path.splitext(instru_n)[0] 
+    new_track = audio_tools.midi_to_wav.midi_to_wav(midi_path,"./GeneralUser-GS.sf2",instrument,"./AUDIO/{instru_n_without_ext}.wav")
+
+
+    #crée le mix band avec le nouvel instru et stock son path 
+    master_path = audio_tools.mixer.mix_wav_files("./AUDIO/master.wav",pistes)
+
+
+    
+    return jsonify({"master": master_path,
+                    "newtrack": new_track} )
+
+
+
 
 
         
