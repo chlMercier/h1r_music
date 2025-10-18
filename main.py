@@ -29,10 +29,18 @@ def get_next_midi_path(midi_dir=MIDI_DIR, prefix="output", ext=".mid"):
 
 @app.route("/convert", methods=["POST"])
 def convert_wav_to_midi():
+    # Vérifie si le fichier est présent
     if "file" not in request.files:
         return jsonify({"error": "no file part (form field 'file' missing)"}), 400
 
-    f = request.files["file"]
+    # Récupère le fichier
+    f = request.files["audio"]
+
+
+    # Récupère les paramètres textuels (bpm, instrument, etc.)
+    bpm = request.form.get("bpm", type=float, default=120)
+    instrument = request.form.get("instrument", default="piano")
+    nb_mesures = request.form.get("nb_mesures", type=int, default=4)
     if f.filename == "":
         return jsonify({"error": "empty filename"}), 400
 
@@ -44,7 +52,7 @@ def convert_wav_to_midi():
     midi_path = get_next_midi_path()
 
     # Convertir WAV → MIDI
-    v2m.convert_wav_to_midi(wav_path, midi_path)
+    v2m.convert_wav_to_midi(wav_path, midi_path,bpm,nb_mesures)
 
     return jsonify({"message": f"MIDI enregistre: {midi_path}"})
 
