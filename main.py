@@ -59,7 +59,7 @@ def convert_wav_to_midi():
     bpm = request.form.get("bpm", type=float, default=120)
     instrument = request.form.get("instrument", default="piano")
     nb_mesures = request.form.get("nb_mesures", type=int, default=4)
-    pistes= request.form.get("pistes")
+    pistes = request.form.getlist("pistes")
     if f.filename == "":
         return jsonify({"error": "empty filename"}), 400
 
@@ -79,11 +79,13 @@ def convert_wav_to_midi():
     #créer le wav du nouvel instru et stock son path 
     instru_n = os.path.basename(midi_path)         
     instru_n_without_ext = os.path.splitext(instru_n)[0] 
-    new_track = audio_tools.midi_to_wav.midi_to_wav(midi_path,"./GeneralUser-GS.sf2",instrument,"./AUDIO/{instru_n_without_ext}.wav")
+    out_track_path = f"./AUDIO/{instru_n_without_ext}.wav"
+    new_track = audio_tools.midi_to_wav.midi_to_wav(midi_path, "./GeneralUser-GS.sf2", instrument, out_track_path)
 
 
     #crée le mix band avec le nouvel instru et stock son path 
-    master_path = audio_tools.mixer.mix_wav_files("./AUDIO/master.wav",pistes)
+    to_mix = (pistes or []) + [new_track]
+    master_path = audio_tools.mixer.mix_wav_files("./AUDIO/master.wav", to_mix)
 
 
     
