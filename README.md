@@ -29,24 +29,29 @@ PS1> Invoke-Expression (poetry env activate)
 ```
 (h1rmusic) $  poetry run python blabla.py
 ```
+
 ### activate virtual env with pip on windows:
+
 ```
 venv\Scripts\Activate.ps1
 
 ```
+
 ## Recording sound
 
 (All of these can be replaced with poetry run command if the virtual env is activated)
 
 ```
-$  python record-sound.py
+$ python record-sound.py
 ```
 
 Records your voice until you type Ctrl+C. The record is stored in to recordings/.
 
-##
+## Convert WAV into MIDI
 
 ```
-$  python main.py
-$  curl.exe -X POST -F "file=@./recordings/hymne-a-la-joie.wav" http://localhost:9004/convert
+# start server
+$ python main.py
+# in another terminal:
+$ curl.exe -X POST -F "audio=@./recordings/hymne-a-la-joie.wav" http://localhost:9004/convert
 ```
