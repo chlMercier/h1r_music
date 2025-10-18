@@ -74,6 +74,7 @@ def convert_wav_to_midi():
 
     v2m.convert_wav_to_midi(wav_path, midi_path,bpm,nb_mesures)
 
+
     
 
     #créer le wav du nouvel instru et stock son path 
@@ -91,7 +92,6 @@ def convert_wav_to_midi():
     
     return jsonify({"master": master_path,
                     "newtrack": new_track} )
-
 
 
 
