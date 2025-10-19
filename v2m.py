@@ -41,8 +41,8 @@ def apply_min_length_filter(f1, min_length=MIN_LENGTH):
 
         segment = f1[i:j]
         count = len(segment)
-        note_mean = f1[i:j]
-        note_mean = np.nanmean(segment)
+        note_mean = f1[(i+j)//2]
+        #note_mean = np.nanmean(segment)
 
         if count >= min_length:
             # Note assez longue → garder la moyenne
