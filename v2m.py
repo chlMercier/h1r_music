@@ -130,4 +130,4 @@ def convert_wav_to_midi(wav_path, midi_path,bpm,nb_mesures):
     # Retour simple
     return f"MIDI enregistré : {midi_path}"
 
-convert_wav_to_midi("recordings/music.wav","midi/output1.mid",130,4)
+#convert_wav_to_midi("recordings/music.wav","midi/output1.mid",130,4)
