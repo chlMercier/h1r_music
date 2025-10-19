@@ -41,6 +41,7 @@ def apply_min_length_filter(f1, min_length=MIN_LENGTH):
 
         segment = f1[i:j]
         count = len(segment)
+        note_mean = f1[i:j]
         note_mean = np.nanmean(segment)
 
         if count >= min_length:
@@ -58,39 +59,46 @@ def apply_min_length_filter(f1, min_length=MIN_LENGTH):
     return filtered
 
 
-def filtered_notes_to_midi(filtered, sr,tempo_bpm, hop_length=HOP_LENGTH,
-                            ticks_per_beat=TICKS_PER_BEAT,
+def filtered_notes_to_midi(filtered, sr, tempo_bpm,
+                           ticks_per_beat=TICKS_PER_BEAT,
+                           hop_length=HOP_LENGTH,
                            out_path="output.mid"):
     mid = MidiFile(ticks_per_beat=ticks_per_beat)
-    microseconds_per_beat=bpm2tempo(tempo_bpm)
+    microseconds_per_beat = bpm2tempo(tempo_bpm)
     track = MidiTrack()
     mid.tracks.append(track)
-    track.append(MetaMessage("set_tempo",tempo=microseconds_per_beat))
+    track.append(MetaMessage("set_tempo", tempo=microseconds_per_beat))
 
-    frame_ticks = max(1, int(round((hop_length / sr) * (ticks_per_beat / (60.0 / tempo_bpm)))))
-    #print("frame_ticks: ",frame_ticks)
+    # Durée d'un tick en secondes
+    seconds_per_tick = 60.0 / (tempo_bpm * ticks_per_beat)
+
     current_note = None
-    duration_ticks = 0
+    duration_seconds = 0.0
 
     for n in filtered:
         if isinstance(n, float) and np.isnan(n):
             if current_note is not None:
+                # Convertir la durée en ticks
+                duration_ticks = max(1, int(round(duration_seconds / seconds_per_tick)))
                 track.append(Message('note_off', note=int(current_note), velocity=64, time=duration_ticks))
                 current_note = None
-                duration_ticks = 0
+                duration_seconds = 0.0
             continue
 
         n_int = int(round(n))
         if current_note == n_int:
-            duration_ticks += frame_ticks
+            duration_seconds += hop_length / sr
         else:
             if current_note is not None:
+                duration_ticks = max(1, int(round(duration_seconds / seconds_per_tick)))
                 track.append(Message('note_off', note=int(current_note), velocity=64, time=duration_ticks))
             track.append(Message('note_on', note=n_int, velocity=64, time=0))
             current_note = n_int
-            duration_ticks = frame_ticks
+            duration_seconds = hop_length / sr
 
+    # Note finale
     if current_note is not None:
+        duration_ticks = max(1, int(round(duration_seconds / seconds_per_tick)))
         track.append(Message('note_off', note=int(current_note), velocity=64, time=duration_ticks))
 
     mid.save(out_path)
@@ -122,4 +130,4 @@ def convert_wav_to_midi(wav_path, midi_path,bpm,nb_mesures):
     # Retour simple
     return f"MIDI enregistré : {midi_path}"
 
-#convert_wav_to_midi("recordings/hymne-a-la-joie.wav","midi/output1.mid",70,4)
+convert_wav_to_midi("recordings/music.wav","midi/output1.mid",130,4)
