@@ -1,58 +1,73 @@
-
 from flask import Flask, request, jsonify
 import os
 import tempfile
 import numpy as np
 import librosa
 from mido import MidiFile, MidiTrack, Message
+import matplotlib
+from matplotlib import pyplot as plt
 
 # Paramètres
 HOP_LENGTH = 512
 FMIN = 60
 FMAX = 1000
-MIN_LENGTH = 10
+MIN_LENGTH = 7  # nouveau min_length
 TEMPO_BPM = 120
 TICKS_PER_BEAT = 480
+
 
 def hz_to_midi_note(hz):
     return int(round(69 + 12 * np.log2(hz / 440.0)))
 
+
 def apply_min_length_filter(f1, min_length=MIN_LENGTH):
-    filtered = []
+    """
+    Nouveau filtre basé sur la segmentation en notes séparées par des silences.
+    Les segments courts sont remplacés par la dernière note valide.
+    """
+    f1 = np.array(f1, dtype=float)
+    filtered = np.full_like(f1, np.nan)
     i = 0
     last_note = np.nan
-    N = len(f1)
 
-    while i < N:
-        note = f1[i]
-        count = 1
-        while i + count < N:
-            next_note = f1[i + count]
-            if (isinstance(note, float) and np.isnan(note) and isinstance(next_note, float) and np.isnan(next_note)) \
-                or (note == next_note):
-                count += 1
-            else:
-                break
+    while i < len(f1):
+        # Si c’est un silence, on passe au suivant
+        if np.isnan(f1[i]):
+            i += 1
+            continue
+
+        # Début d’un segment de note (jusqu’au prochain silence)
+        j = i
+        while j < len(f1) and not np.isnan(f1[j]):
+            j += 1
+
+        segment = f1[i:j]
+        count = len(segment)
+        note_mean = np.nanmean(segment)
 
         if count >= min_length:
-            filtered.extend([note]*count)
-            if not (isinstance(note, float) and np.isnan(note)):
-                last_note = note
+            # Note assez longue → garder la moyenne
+            filtered[i:j] = note_mean
+            last_note = note_mean
         else:
-            replacement = last_note
-            filtered.extend([replacement]*count)
+            # Note trop courte → remplacer par la dernière note valide (si existante)
+            if not np.isnan(last_note):
+                filtered[i:j] = last_note
+            # sinon, on laisse en silence (np.nan)
 
-        i += count 
+        i = j  # passage au segment suivant
 
     return filtered
 
-def filtered_notes_to_midi(filtered, sr, hop_length=HOP_LENGTH, tempo_bpm=TEMPO_BPM,
-                           ticks_per_beat=TICKS_PER_BEAT, out_path="output.mid"):
+
+def filtered_notes_to_midi(filtered, sr, hop_length=HOP_LENGTH,
+                           tempo_bpm=TEMPO_BPM, ticks_per_beat=TICKS_PER_BEAT,
+                           out_path="output.mid"):
     mid = MidiFile(ticks_per_beat=ticks_per_beat)
     track = MidiTrack()
     mid.tracks.append(track)
 
-    frame_ticks = max(1, int(round((hop_length / sr) * (ticks_per_beat / (60.0/tempo_bpm)))))
+    frame_ticks = max(1, int(round((hop_length / sr) * (ticks_per_beat / (60.0 / tempo_bpm)))))
     current_note = None
     duration_ticks = 0
 
@@ -64,7 +79,7 @@ def filtered_notes_to_midi(filtered, sr, hop_length=HOP_LENGTH, tempo_bpm=TEMPO_
                 duration_ticks = 0
             continue
 
-        n_int = int(n)
+        n_int = int(round(n))
         if current_note == n_int:
             duration_ticks += frame_ticks
         else:
@@ -81,21 +96,22 @@ def filtered_notes_to_midi(filtered, sr, hop_length=HOP_LENGTH, tempo_bpm=TEMPO_
     return out_path
 
 
-def convert_wav_to_midi(wav_path,midi_path,bpm,nb_mesures):
- # Charger audio
-    y, sr = librosa.load(wav_path,duration=nb_mesures*60*4/bpm,sr=None, mono=True)
-    f0, voiced_flag, voiced_probs = librosa.pyin(y, fmin=FMIN, fmax=FMAX, hop_length=HOP_LENGTH)
+def convert_wav_to_midi(wav_path, midi_path):
+    # Charger l'audio
+    y, sr = librosa.load(wav_path, mono=True)
+    f0, voiced_flag, voiced_probs = librosa.pyin(y, fmin=FMIN, fmax=FMAX)
+    times = librosa.times_like(f0)
 
-        # Conversion en notes MIDI (ou np.nan)
+    # Conversion en notes MIDI (ou np.nan)
     f1 = [hz_to_midi_note(v) if v is not None and not np.isnan(v) else np.nan for v in f0]
 
-        # Appliquer filtre min_length
+    # Appliquer le nouveau filtre min_length
     filtered = apply_min_length_filter(f1, min_length=MIN_LENGTH)
 
-        # Générer le fichier MIDI
+    # Générer le fichier MIDI
     filtered_notes_to_midi(filtered, sr=sr, hop_length=HOP_LENGTH,
-                            tempo_bpm=TEMPO_BPM, ticks_per_beat=TICKS_PER_BEAT,
-                            out_path=midi_path)    
+                           tempo_bpm=TEMPO_BPM, ticks_per_beat=TICKS_PER_BEAT,
+                           out_path=midi_path)   
        
 
     # Retour simple
