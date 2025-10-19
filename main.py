@@ -100,39 +100,39 @@ def convert_wav_to_midi():
 
 
 
-
-
-# Dossier autorisé (évite d’exposer tout le disque)
-AUDIO_BASE_DIR = os.path.abspath("./AUDIO")
+# Dossier autorisé, basé sur l’emplacement de l’app (pas le CWD)
+AUDIO_BASE_DIR = os.path.abspath(os.path.join(app.root_path, "AUDIO"))
 
 @app.route("/stream", methods=["GET"])
 def stream_wav():
-    # 1) Chemin relatif demandé (ex: ?path=master.wav ou ?path=sub/track.wav)
     rel_path = request.args.get("path")
     if not rel_path:
         return jsonify({"error": "missing 'path' query param"}), 400
 
-    # 2) Sécurise le chemin (pas d'évasion type ../)
+    # Normalise : enlève slashes de tête et un éventuel préfixe 'AUDIO/'
+    # Exemple: '/AUDIO/mon.wav' -> 'mon.wav' ; 'AUDIO/mon.wav' -> 'mon.wav'
+    rel_path = rel_path.lstrip("/\\")
+    if rel_path.startswith("AUDIO/") or rel_path.startswith("AUDIO\\"):
+        rel_path = rel_path.split("/", 1)[-1] if "/" in rel_path else rel_path.split("\\", 1)[-1]
+
+    # Anti-traversal
+    if ".." in rel_path.replace("\\", "/"):
+        return jsonify({"error": "forbidden path"}), 403
+
+    # Construit le chemin absolu final dans AUDIO/
     full_path = os.path.abspath(os.path.join(AUDIO_BASE_DIR, rel_path))
+
+    # Vérifie bien que ça reste dans AUDIO/
     if not full_path.startswith(AUDIO_BASE_DIR + os.sep):
         return jsonify({"error": "forbidden path"}), 403
 
-    # 3) Vérifie fichier + extension
+    # Existence + extension
     if not os.path.exists(full_path):
         return jsonify({"error": f"file not found: {rel_path}"}), 404
     if not full_path.lower().endswith(".wav"):
         return jsonify({"error": "only .wav files are allowed"}), 415
 
-    # 4) Stream du fichier, avec support des Range (conditional=True)
-    # as_attachment=False -> lecture directe dans <audio>, sans téléchargement forcé
-    return send_file(
-        full_path,
-        mimetype="audio/wav",
-        as_attachment=False,
-        conditional=True,
-        max_age=0  # pas de cache si tu préfères
-    )
-
+    return send_file(full_path, mimetype="audio/wav", as_attachment=False, conditional=True, max_age=0)
 
 
 
