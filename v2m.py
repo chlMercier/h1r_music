@@ -96,9 +96,9 @@ def filtered_notes_to_midi(filtered, sr, hop_length=HOP_LENGTH,
     return out_path
 
 
-def convert_wav_to_midi(wav_path, midi_path):
+def convert_wav_to_midi(wav_path, midi_path,bpm,nb_mesures):
     # Charger l'audio
-    y, sr = librosa.load(wav_path, mono=True)
+    y, sr = librosa.load(wav_path, mono=True,duration=nb_mesures*4*60/bpm)
     f0, voiced_flag, voiced_probs = librosa.pyin(y, fmin=FMIN, fmax=FMAX)
     times = librosa.times_like(f0)
 
