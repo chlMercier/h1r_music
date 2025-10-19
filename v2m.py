@@ -68,7 +68,7 @@ def filtered_notes_to_midi(filtered, sr,tempo_bpm, hop_length=HOP_LENGTH,
     track.append(MetaMessage("set_tempo",tempo=microseconds_per_beat))
 
     frame_ticks = max(1, int(round((hop_length / sr) * (ticks_per_beat / (60.0 / tempo_bpm)))))
-    print("frame_ticks: ",frame_ticks)
+    #print("frame_ticks: ",frame_ticks)
     current_note = None
     duration_ticks = 0
 
