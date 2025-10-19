@@ -100,40 +100,34 @@ def convert_wav_to_midi():
 
 
 
-# Dossier autorisé, basé sur l’emplacement de l’app (pas le CWD)
+
+# Dossier racine des WAV, indépendant du cwd
 AUDIO_BASE_DIR = os.path.abspath(os.path.join(app.root_path, "AUDIO"))
 
 @app.route("/stream", methods=["GET"])
 def stream_wav():
-    rel_path = request.args.get("path")
+    rel_path = request.args.get("path", "")
     if not rel_path:
         return jsonify({"error": "missing 'path' query param"}), 400
 
-    # Normalise : enlève slashes de tête et un éventuel préfixe 'AUDIO/'
-    # Exemple: '/AUDIO/mon.wav' -> 'mon.wav' ; 'AUDIO/mon.wav' -> 'mon.wav'
-    rel_path = rel_path.lstrip("/\\")
-    if rel_path.startswith("AUDIO/") or rel_path.startswith("AUDIO\\"):
-        rel_path = rel_path.split("/", 1)[-1] if "/" in rel_path else rel_path.split("\\", 1)[-1]
+    # Normalisation ultra-simple
+    p = rel_path.replace("\\", "/")
+    for prefix in ("./AUDIO/", "AUDIO/", "./"):
+        if p.startswith(prefix):
+            p = p[len(prefix):]
 
-    # Anti-traversal
-    if ".." in rel_path.replace("\\", "/"):
+    # Anti-traversal minimal
+    if ".." in p:
         return jsonify({"error": "forbidden path"}), 403
 
-    # Construit le chemin absolu final dans AUDIO/
-    full_path = os.path.abspath(os.path.join(AUDIO_BASE_DIR, rel_path))
+    full_path = os.path.abspath(os.path.join(AUDIO_BASE_DIR, p))
 
-    # Vérifie bien que ça reste dans AUDIO/
-    if not full_path.startswith(AUDIO_BASE_DIR + os.sep):
-        return jsonify({"error": "forbidden path"}), 403
-
-    # Existence + extension
-    if not os.path.exists(full_path):
+    if not os.path.isfile(full_path):
         return jsonify({"error": f"file not found: {rel_path}"}), 404
     if not full_path.lower().endswith(".wav"):
         return jsonify({"error": "only .wav files are allowed"}), 415
 
     return send_file(full_path, mimetype="audio/wav", as_attachment=False, conditional=True, max_age=0)
-
 
 
 if __name__ == "__main__":
