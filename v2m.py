@@ -4,8 +4,7 @@ import tempfile
 import numpy as np
 import librosa
 from mido import MidiFile, MidiTrack, Message
-import matplotlib
-from matplotlib import pyplot as plt
+
 
 # Paramètres
 HOP_LENGTH = 512
