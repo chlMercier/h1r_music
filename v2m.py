@@ -59,8 +59,8 @@ def apply_min_length_filter(f1, min_length=MIN_LENGTH):
     return filtered
 
 
-def filtered_notes_to_midi(filtered, sr, hop_length=HOP_LENGTH,
-                           tempo_bpm=TEMPO_BPM, ticks_per_beat=TICKS_PER_BEAT,
+def filtered_notes_to_midi(filtered, sr,tempo_bpm, hop_length=HOP_LENGTH,
+                            ticks_per_beat=TICKS_PER_BEAT,
                            out_path="output.mid"):
     mid = MidiFile(ticks_per_beat=ticks_per_beat)
     track = MidiTrack()
@@ -109,7 +109,7 @@ def convert_wav_to_midi(wav_path, midi_path,bpm,nb_mesures):
 
     # Générer le fichier MIDI
     filtered_notes_to_midi(filtered, sr=sr, hop_length=HOP_LENGTH,
-                           tempo_bpm=TEMPO_BPM, ticks_per_beat=TICKS_PER_BEAT,
+                           tempo_bpm=bpm, ticks_per_beat=TICKS_PER_BEAT,
                            out_path=midi_path)   
        
 
