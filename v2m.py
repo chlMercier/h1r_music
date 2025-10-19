@@ -3,7 +3,7 @@ import os
 import tempfile
 import numpy as np
 import librosa
-from mido import MidiFile, MidiTrack, Message
+from mido import MidiFile, MidiTrack, Message,MetaMessage, bpm2tempo
 
 
 # Paramètres
@@ -11,7 +11,6 @@ HOP_LENGTH = 512
 FMIN = 60
 FMAX = 1000
 MIN_LENGTH = 7  # nouveau min_length
-TEMPO_BPM = 120
 TICKS_PER_BEAT = 480
 
 
@@ -63,10 +62,13 @@ def filtered_notes_to_midi(filtered, sr,tempo_bpm, hop_length=HOP_LENGTH,
                             ticks_per_beat=TICKS_PER_BEAT,
                            out_path="output.mid"):
     mid = MidiFile(ticks_per_beat=ticks_per_beat)
+    microseconds_per_beat=bpm2tempo(tempo_bpm)
     track = MidiTrack()
     mid.tracks.append(track)
+    track.append(MetaMessage("set_tempo",tempo=microseconds_per_beat))
 
     frame_ticks = max(1, int(round((hop_length / sr) * (ticks_per_beat / (60.0 / tempo_bpm)))))
+    print("frame_ticks: ",frame_ticks)
     current_note = None
     duration_ticks = 0
 
@@ -97,7 +99,11 @@ def filtered_notes_to_midi(filtered, sr,tempo_bpm, hop_length=HOP_LENGTH,
 
 def convert_wav_to_midi(wav_path, midi_path,bpm,nb_mesures):
     # Charger l'audio
-    y, sr = librosa.load(wav_path, mono=True,duration=nb_mesures*4*60/bpm)
+    duration = nb_mesures*4*60/bpm
+    y, sr = librosa.load(wav_path, mono=True,duration=duration)
+    #print("sr: ",sr)
+    #print("bpm:",bpm)
+    #print("duration: ",duration)
     f0, voiced_flag, voiced_probs = librosa.pyin(y, fmin=FMIN, fmax=FMAX)
     times = librosa.times_like(f0)
 
@@ -115,3 +121,5 @@ def convert_wav_to_midi(wav_path, midi_path,bpm,nb_mesures):
 
     # Retour simple
     return f"MIDI enregistré : {midi_path}"
+
+#convert_wav_to_midi("recordings/hymne-a-la-joie.wav","midi/output1.mid",70,4)
